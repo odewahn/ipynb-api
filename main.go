@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"io/ioutil"
 	"log"
+	"strings"
 )
 
 
@@ -37,10 +38,44 @@ func (k *Kernels) fetch() {
 	
 }
 
+
+// Kill the specified kernel
+func kill_kernel(k string) {
+	url := fmt.Sprintf("http://192.168.59.103:8888/api/kernels/%s",k)
+	// Query the /api/kernels endpoint
+	// Query the /api/kernels endpoint
+	
+	req, err := http.NewRequest("DELETE", url, nil)
+	if err != nil {
+		log.Fatal(err)
+	}
+	// handle err
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		log.Fatal(err)
+	}
+	// handle err	
+	
+	// Read the results from the build request
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	fmt.Println(body)
+}
+
 // Kill the specified kernel
 func kill(c *cli.Context) {
 	id := c.Args().First()
 	fmt.Printf("Looking for %s\n",id)
+	kernels := &Kernels{}
+	kernels.fetch()
+	for _,k := range *kernels {
+		if strings.Index(k.Id,id) == 0 {
+			kill_kernel(k.Id)
+		}
+	}
 }
 
 
