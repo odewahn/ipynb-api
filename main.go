@@ -9,14 +9,17 @@ import (
 	"io/ioutil"
 	"log"
 	"strings"
+	"bytes"
 )
 
 
 // Shows the running kernels
-type Kernels []struct{
+type Kernel struct{
 	Name string `json:"name"`
 	Id string	`json:"id"`
 }
+
+type Kernels []Kernel
 
 
 func (k *Kernels) fetch() {
@@ -40,9 +43,8 @@ func (k *Kernels) fetch() {
 
 
 // Kill the specified kernel
-func kill_kernel(k string) {
-	url := fmt.Sprintf("http://192.168.59.103:8888/api/kernels/%s",k)
-	// Query the /api/kernels endpoint
+func kill_kernel(id string) {
+	url := fmt.Sprintf("http://192.168.59.103:8888/api/kernels/%s",id)
 	// Query the /api/kernels endpoint
 	
 	req, err := http.NewRequest("DELETE", url, nil)
@@ -57,27 +59,59 @@ func kill_kernel(k string) {
 	// handle err	
 	
 	// Read the results from the build request
-	body, err := ioutil.ReadAll(resp.Body)
+	_, err = ioutil.ReadAll(resp.Body)
 	if err != nil {
 		log.Fatal(err)
 	}
-
-	fmt.Println(body)
+    fmt.Printf("Killed %s\n",id)
 }
 
-// Kill the specified kernel
-func kill(c *cli.Context) {
-	id := c.Args().First()
+// Search for the specified kernel and kill anything that starts with a match
+func kill(id string) { 
 	fmt.Printf("Looking for %s\n",id)
 	kernels := &Kernels{}
 	kernels.fetch()
 	for _,k := range *kernels {
-		if strings.Index(k.Id,id) == 0 {
+		if (len(id) == 0) || (strings.Index(k.Id,id) == 0) {
 			kill_kernel(k.Id)
 		}
 	}
 }
 
+func start(k string) {
+	fmt.Printf("Starting %s\n",k)
+	// Create the payload as a map
+	payload := make(map[string]string)
+	payload["name"] = k
+	dat, err := json.Marshal(payload)
+	if err != nil {
+		log.Fatal(err)
+	}
+	//
+	req, err := http.NewRequest("POST", "http://192.168.59.103:8888/api/kernels", bytes.NewBuffer(dat))
+	if err != nil {
+		log.Fatal(err)
+	}
+	// handle err
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		log.Fatal(err)
+	}
+	
+	// Read the results from the build request
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		log.Fatal(err)
+	}
+	
+	new_kernel := Kernel{}
+	err = json.Unmarshal(body, &new_kernel)
+	if err != nil {
+		log.Fatal(err)
+	}
+	
+	fmt.Printf("Starting %s\n", new_kernel.Id)
+}
 
 
 func main() {
@@ -102,9 +136,16 @@ func main() {
 		},
 		{
 			Name: "kill",
-			Usage: "Kills a kernel given the first 3 chars or its id",
+			Usage: "Kills a kernel based on the first few chars of its id",
 			Action: func(c *cli.Context) {
-				kill(c)
+				kill(c.Args().First())
+			},
+		},
+		{
+			Name: "start",
+			Usage: "Starts the specified kerlen",
+			Action: func(c *cli.Context) {
+				start(c.Args().First())
 			},
 		},
 	}
