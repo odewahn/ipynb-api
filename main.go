@@ -67,32 +67,36 @@ func kill_kernel(id string) {
 }
 
 // Kill the specified kernel
-func kernel_action(id, action string) {
-	url := fmt.Sprintf("http://192.168.59.103:8888/api/kernels/%s/%s",id, action)
-	// Query the /api/kernels endpoint
+func kernel_action(target, action string) {
 	
-	req, err := http.NewRequest("POST", url, nil)
-	if err != nil {
-		log.Fatal(err)
+	kernels := find(target)
+	for _,k := range kernels {
+		url := fmt.Sprintf("http://192.168.59.103:8888/api/kernels/%s/%s",k.Id, action)
+		// Query the /api/kernels endpoint
+
+		req, err := http.NewRequest("POST", url, nil)
+		if err != nil {
+			log.Fatal(err)
+		}
+		// handle err
+		resp, err := http.DefaultClient.Do(req)
+		if err != nil {
+			log.Fatal(err)
+		}
+		// handle err	
+
+		// Read the results from the build request
+		_, err = ioutil.ReadAll(resp.Body)
+		if err != nil {
+			log.Fatal(err)
+		}
+	    fmt.Printf("%s on %s\n",action, k.Id)
+
 	}
-	// handle err
-	resp, err := http.DefaultClient.Do(req)
-	if err != nil {
-		log.Fatal(err)
-	}
-	// handle err	
-	
-	// Read the results from the build request
-	_, err = ioutil.ReadAll(resp.Body)
-	if err != nil {
-		log.Fatal(err)
-	}
-    fmt.Printf("%s on %s\n",action, id)
 }
 
 // Search for the specified kernel and kill anything that starts with a match
 func kill(target string) { 
-	fmt.Printf("Looking for %s\n",target)
 	kernels := find(target)
 	for _,k := range kernels {
 		kill_kernel(k.Id)	
@@ -174,6 +178,20 @@ func main() {
 			Usage: "Kills a kernel based on the first few chars of its id",
 			Action: func(c *cli.Context) {
 				kill(c.Args().First())
+			},
+		},
+		{
+			Name: "restart",
+			Usage: "Restart a kernel based on the first few chars of its id",
+			Action: func(c *cli.Context) {
+				kernel_action(c.Args().First(), "restart")
+			},
+		},
+		{
+			Name: "interrupt",
+			Usage: "Interrupt a kernel based on the first few chars of its id",
+			Action: func(c *cli.Context) {
+				kernel_action(c.Args().First(), "interrupt")
 			},
 		},
 		{
