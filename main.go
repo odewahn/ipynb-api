@@ -66,14 +66,40 @@ func kill_kernel(id string) {
     fmt.Printf("Killed %s\n",id)
 }
 
+// Kill the specified kernel
+func kernel_action(id, action string) {
+	url := fmt.Sprintf("http://192.168.59.103:8888/api/kernels/%s/%s",id, action)
+	// Query the /api/kernels endpoint
+	
+	req, err := http.NewRequest("POST", url, nil)
+	if err != nil {
+		log.Fatal(err)
+	}
+	// handle err
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		log.Fatal(err)
+	}
+	// handle err	
+	
+	// Read the results from the build request
+	_, err = ioutil.ReadAll(resp.Body)
+	if err != nil {
+		log.Fatal(err)
+	}
+    fmt.Printf("%s on %s\n",action, id)
+}
+
 // Search for the specified kernel and kill anything that starts with a match
-func kill(id string) { 
-	fmt.Printf("Looking for %s\n",id)
+func search(target, action string) { 
+	fmt.Printf("Looking for %s\n",target)
 	kernels := &Kernels{}
 	kernels.fetch()
 	for _,k := range *kernels {
-		if (len(id) == 0) || (strings.Index(k.Id,id) == 0) {
-			kill_kernel(k.Id)
+		if (len(target) == 0) || (strings.Index(k.Id,target) == 0) {
+			if action == "kill" {
+				kill_kernel(k.Id)				
+			}
 		}
 	}
 }
@@ -138,7 +164,7 @@ func main() {
 			Name: "kill",
 			Usage: "Kills a kernel based on the first few chars of its id",
 			Action: func(c *cli.Context) {
-				kill(c.Args().First())
+				search(c.Args().First(), "kill")
 			},
 		},
 		{
