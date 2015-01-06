@@ -91,17 +91,26 @@ func kernel_action(id, action string) {
 }
 
 // Search for the specified kernel and kill anything that starts with a match
-func search(target, action string) { 
+func kill(target string) { 
 	fmt.Printf("Looking for %s\n",target)
+	kernels := find(target)
+	for _,k := range kernels {
+		kill_kernel(k.Id)	
+	}
+}
+
+
+// Search for the specified kernel and kill anything that starts with a match
+func find(target string) Kernels {
+	retVal := Kernels{} 
 	kernels := &Kernels{}
 	kernels.fetch()
 	for _,k := range *kernels {
 		if (len(target) == 0) || (strings.Index(k.Id,target) == 0) {
-			if action == "kill" {
-				kill_kernel(k.Id)				
-			}
+			retVal = append(retVal, k)
 		}
 	}
+	return retVal
 }
 
 func start(k string) {
@@ -164,7 +173,7 @@ func main() {
 			Name: "kill",
 			Usage: "Kills a kernel based on the first few chars of its id",
 			Action: func(c *cli.Context) {
-				search(c.Args().First(), "kill")
+				kill(c.Args().First())
 			},
 		},
 		{
