@@ -1,4 +1,4 @@
-Simple command line client for the IPyhton notebook.  It assumes you're running a Notebook server under boot2docker, like this:
+Simple command line client for the IPython notebook.  It assumes you're running a Notebook server under boot2docker, like this:
 
 ```
 $ docker run -it -p 8888:8888 -v $(pwd):/usr/data odewahn/ipymd
