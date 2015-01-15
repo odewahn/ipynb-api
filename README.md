@@ -1,13 +1,6 @@
-Simple command line client for the IPython notebook.  It assumes you're running a Notebook server under boot2docker, like this:
+Simple command line client for the IPython notebook 3 API.  
 
 ```
-$ docker run -it -p 8888:8888 -v $(pwd):/usr/data odewahn/ipymd
-```
-
-This will expose a kernel server running on `192.168.59.103:8888`.  Then, you can use this to little utility, which is basically just a thin wrapper on the Notebook API, to start, stop, restart, and interrupt kernels:
-
-```
-$ ./ipynb-api --help
 NAME:
    ipynb-api - Client for ipynb api
 
@@ -17,34 +10,47 @@ USAGE:
 VERSION:
    0.0.0-alpha
 
+AUTHOR:
+  Author - <unknown@email>
+
 COMMANDS:
    show		Show active kernels
    kill		Kills a kernel based on the first few chars of its id
    restart	Restart a kernel based on the first few chars of its id
    interrupt	Interrupt a kernel based on the first few chars of its id
-   start	Starts the specified kerlen
+   start	Starts the specified kernel
    help, h	Shows a list of commands or help for one command
    
 GLOBAL OPTIONS:
+   --host 		Host
    --help, -h		show help
    --version, -v	print the version
 ```
 
-Here's a session to show how to use it:
+
+You need to pass it a `--host` flag, and then you can do various things with the API, like this:
+
 
 ```console
-admins-air-5:ipynb-api odewahn$ ./ipynb-api show
-admins-air-5:ipynb-api odewahn$ ./ipynb-api start python3
+$ ./ipynb-api --host http://192.168.59.103:8888/ show
+$ ./ipynb-api --host http://192.168.59.103:8888/ start python3
 Starting python3
-Starting 303c81d1-067b-4b27-96a4-2ad6ced30aa8
-admins-air-5:ipynb-api odewahn$ ./ipynb-api show
-python3 	 303c81d1-067b-4b27-96a4-2ad6ced30aa8 
-admins-air-5:ipynb-api odewahn$ ./ipynb-api restart 303
-restart on 303c81d1-067b-4b27-96a4-2ad6ced30aa8
-admins-air-5:ipynb-api odewahn$ ./ipynb-api kill 303
-Killed 303c81d1-067b-4b27-96a4-2ad6ced30aa8
-admins-air-5:ipynb-api odewahn$ ./ipynb-api show
-admins-air-5:ipynb-api odewahn$
+Starting eb92b691-19df-4d25-869b-69f3cc886914
+$ ./ipynb-api --host http://192.168.59.103:8888/ show
+python3 	 eb92b691-19df-4d25-869b-69f3cc886914 
+$ ./ipynb-api --host http://192.168.59.103:8888/ start python2
+Starting python2
+Starting ceaab0c1-a716-4005-802b-c45c80f4b72e
+$ ./ipynb-api --host http://192.168.59.103:8888/ show
+python3 	 eb92b691-19df-4d25-869b-69f3cc886914 
+python2 	 ceaab0c1-a716-4005-802b-c45c80f4b72e 
+$ ./ipynb-api --host http://192.168.59.103:8888/ restart eb9
+restart on eb92b691-19df-4d25-869b-69f3cc886914
+$ ./ipynb-api --host http://192.168.59.103:8888/ kill eb9
+Killed eb92b691-19df-4d25-869b-69f3cc886914
+$ ./ipynb-api --host http://192.168.59.103:8888/ show
+python2 	 ceaab0c1-a716-4005-802b-c45c80f4b72e 
+$
 ```
 
 ## Building
