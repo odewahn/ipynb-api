@@ -22,10 +22,26 @@ type Kernel struct{
 type Kernels []Kernel
 
 
-func (k *Kernels) fetch() {
+// Cleans up the host and path info
+func get_endpoint(host, path string) string {
+	//remove trailing "/" from host
+	if string(host[len(host)-1]) == "/" {
+		host = host[:len(host)-1]
+	}
+	//remove leading "/" from path
+	if string(path[0]) == "/" {
+		path = path[1:]
+	}
+	return fmt.Sprintf("%s/%s", host, path)
+}
+
+
+func (k *Kernels) fetch(host string) {
+	
+	endpoint := get_endpoint(host, "/api/kernels")
 	
 	// Query the /api/kernels endpoint
-	resp, err := http.Get("http://192.168.59.103:8888/api/kernels")
+	resp, err := http.Get(endpoint)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -43,8 +59,11 @@ func (k *Kernels) fetch() {
 
 
 // Kill the specified kernel
-func kill_kernel(id string) {
-	url := fmt.Sprintf("http://192.168.59.103:8888/api/kernels/%s",id)
+func kill_kernel(host, id string) {
+	
+	endpoint := get_endpoint(host, "/api/kernels")
+		
+	url := fmt.Sprintf("%s/%s",endpoint, id)
 	// Query the /api/kernels endpoint
 	
 	req, err := http.NewRequest("DELETE", url, nil)
@@ -67,11 +86,13 @@ func kill_kernel(id string) {
 }
 
 // Kill the specified kernel
-func kernel_action(target, action string) {
-	
-	kernels := find(target)
+func kernel_action(host, target, action string) {
+
+	endpoint := get_endpoint(host, "/api/kernels")
+		
+	kernels := find(host, target)
 	for _,k := range kernels {
-		url := fmt.Sprintf("http://192.168.59.103:8888/api/kernels/%s/%s",k.Id, action)
+		url := fmt.Sprintf("%s/%s/%s",endpoint, k.Id, action)
 		// Query the /api/kernels endpoint
 
 		req, err := http.NewRequest("POST", url, nil)
@@ -96,19 +117,19 @@ func kernel_action(target, action string) {
 }
 
 // Search for the specified kernel and kill anything that starts with a match
-func kill(target string) { 
-	kernels := find(target)
+func kill(host, target string) { 
+	kernels := find(host, target)
 	for _,k := range kernels {
-		kill_kernel(k.Id)	
+		kill_kernel(host, k.Id)	
 	}
 }
 
 
 // Search for the specified kernel and kill anything that starts with a match
-func find(target string) Kernels {
+func find(host, target string) Kernels {
 	retVal := Kernels{} 
 	kernels := &Kernels{}
-	kernels.fetch()
+	kernels.fetch(host)
 	for _,k := range *kernels {
 		if (len(target) == 0) || (strings.Index(k.Id,target) == 0) {
 			retVal = append(retVal, k)
@@ -117,7 +138,10 @@ func find(target string) Kernels {
 	return retVal
 }
 
-func start(k string) {
+func start(host, k string) {
+	
+	endpoint := get_endpoint(host, "/api/kernels")
+		
 	fmt.Printf("Starting %s\n",k)
 	// Create the payload as a map
 	payload := make(map[string]string)
@@ -127,7 +151,7 @@ func start(k string) {
 		log.Fatal(err)
 	}
 	//
-	req, err := http.NewRequest("POST", "http://192.168.59.103:8888/api/kernels", bytes.NewBuffer(dat))
+	req, err := http.NewRequest("POST", endpoint, bytes.NewBuffer(dat))
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -165,9 +189,15 @@ func main() {
 		{
 			Name:  "show",
 			Usage: "Show active kernels",
+			Flags: []cli.Flag{
+				cli.StringFlag{
+					Name: "host",
+					Usage: "Host",
+				},
+			},
 			Action: func(c *cli.Context) {
 				s := &Kernels{}
-				s.fetch()
+				s.fetch(c.String("host"))
 				for _,k := range *s {
 					fmt.Printf("%s \t %s \n", k.Name, k.Id)
 				}
@@ -176,29 +206,47 @@ func main() {
 		{
 			Name: "kill",
 			Usage: "Kills a kernel based on the first few chars of its id",
+			Flags: []cli.Flag{
+				cli.StringFlag{
+					Name: "host",
+					Usage: "Host",
+				},
+			},
 			Action: func(c *cli.Context) {
-				kill(c.Args().First())
+				kill(c.String("host"), c.Args().First())
 			},
 		},
 		{
 			Name: "restart",
 			Usage: "Restart a kernel based on the first few chars of its id",
 			Action: func(c *cli.Context) {
-				kernel_action(c.Args().First(), "restart")
+				kernel_action(c.String("host"), c.Args().First(), "restart")
 			},
 		},
 		{
 			Name: "interrupt",
 			Usage: "Interrupt a kernel based on the first few chars of its id",
+			Flags: []cli.Flag{
+				cli.StringFlag{
+					Name: "host",
+					Usage: "Host",
+				},
+			},
 			Action: func(c *cli.Context) {
-				kernel_action(c.Args().First(), "interrupt")
+				kernel_action(c.String("host"), c.Args().First(), "interrupt")
 			},
 		},
 		{
 			Name: "start",
-			Usage: "Starts the specified kerlen",
+			Usage: "Starts the specified kernel",
+			Flags: []cli.Flag{
+				cli.StringFlag{
+					Name: "host",
+					Usage: "Host",
+				},
+			},
 			Action: func(c *cli.Context) {
-				start(c.Args().First())
+				start(c.String("host"), c.Args().First())
 			},
 		},
 	}
