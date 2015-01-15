@@ -185,19 +185,19 @@ func main() {
 	app.Action = func(c *cli.Context) {
 		fmt.Println("Nothing to do.  Try `help` or `-h` to see what's possible.")
 	}
+	app.Flags = []cli.Flag{
+		cli.StringFlag{
+			Name: "host",
+			Usage: "Host",
+		},
+	}
 	app.Commands = []cli.Command{
 		{
 			Name:  "show",
 			Usage: "Show active kernels",
-			Flags: []cli.Flag{
-				cli.StringFlag{
-					Name: "host",
-					Usage: "Host",
-				},
-			},
 			Action: func(c *cli.Context) {
 				s := &Kernels{}
-				s.fetch(c.String("host"))
+				s.fetch(c.GlobalString("host"))
 				for _,k := range *s {
 					fmt.Printf("%s \t %s \n", k.Name, k.Id)
 				}
@@ -206,47 +206,29 @@ func main() {
 		{
 			Name: "kill",
 			Usage: "Kills a kernel based on the first few chars of its id",
-			Flags: []cli.Flag{
-				cli.StringFlag{
-					Name: "host",
-					Usage: "Host",
-				},
-			},
 			Action: func(c *cli.Context) {
-				kill(c.String("host"), c.Args().First())
+				kill(c.GlobalString("host"), c.Args().First())
 			},
 		},
 		{
 			Name: "restart",
 			Usage: "Restart a kernel based on the first few chars of its id",
 			Action: func(c *cli.Context) {
-				kernel_action(c.String("host"), c.Args().First(), "restart")
+				kernel_action(c.GlobalString("host"), c.Args().First(), "restart")
 			},
 		},
 		{
 			Name: "interrupt",
 			Usage: "Interrupt a kernel based on the first few chars of its id",
-			Flags: []cli.Flag{
-				cli.StringFlag{
-					Name: "host",
-					Usage: "Host",
-				},
-			},
 			Action: func(c *cli.Context) {
-				kernel_action(c.String("host"), c.Args().First(), "interrupt")
+				kernel_action(c.GlobalString("host"), c.Args().First(), "interrupt")
 			},
 		},
 		{
 			Name: "start",
 			Usage: "Starts the specified kernel",
-			Flags: []cli.Flag{
-				cli.StringFlag{
-					Name: "host",
-					Usage: "Host",
-				},
-			},
 			Action: func(c *cli.Context) {
-				start(c.String("host"), c.Args().First())
+				start(c.GlobalString("host"), c.Args().First())
 			},
 		},
 	}
